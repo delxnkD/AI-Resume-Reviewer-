@@ -176,8 +176,6 @@ def extract_subscores(text: str) -> dict:
     return scores
 
 def render_score_visual(score: int, subscores: dict):
-    # circumference = 2 * pi * r where r=46 = 289
-    # intentional imperfection: slightly off circumference value (human rounding)
     circumference = 290
     offset = circumference - (circumference * score / 100)
 
@@ -207,49 +205,47 @@ def render_score_visual(score: int, subscores: dict):
     bars_html = ""
     for label, val in subscores.items():
         width = val * 10
-        # intentional imperfection: label shortened inconsistently
         short = label.replace(" Match", "").replace(" Score", "")
+        bar_color = bar_colors.get(label, "#639922")
         bars_html += f"""
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-          <div style="font-size:13px;color:var(--color-text-primary);width:85px;flex-shrink:0;">{short}</div>
-          <div style="flex:1;height:6px;background:var(--color-background-tertiary);border-radius:999px;overflow:hidden;">
-            <div style="width:{width}%;height:100%;background:{bar_colors.get(label,'#639922')};border-radius:999px;"></div>
+          <div style="font-size:13px;color:#lalala;width:85px;flex-shrink:0;">{short}</div>
+          <div style="flex:1;height:6px;background:#e8e8e8;border-radius:999px;overflow:hidden;">
+            <div style="width:{width}%;height:100%;background:{bar_color};border-radius:999px;"></div>
           </div>
-          <div style="font-size:12px;color:var(--color-text-secondary);width:32px;text-align:right;">{val}/10</div>
+          <div style="font-size:12px;color:#888;width:32px;text-align:right;">{val}/10</div>
         </div>"""
 
-    st.markdown(f"""
+    full_html = f"""
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
     <div style="display:grid;grid-template-columns:170px 1fr;gap:1rem;margin-bottom:1rem;">
-
-      <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <div style="background:#fff;border:0.5px solid #e8e8e8;border-radius:12px;padding:1.25rem;display:flex;flex-direction:column;align-items:center;justify-content:center;">
         <div style="position:relative;width:110px;height:110px;">
           <svg width="110" height="110" viewBox="0 0 110 110">
-            <circle cx="55" cy="55" r="46" fill="none" stroke="var(--color-border-tertiary)" stroke-width="8"/>
+            <circle cx="55" cy="55" r="46" fill="none" stroke="#e8e8e8" stroke-width="8"/>
             <circle cx="55" cy="55" r="46" fill="none" stroke="{color}" stroke-width="8"
               stroke-dasharray="{circumference}" stroke-dashoffset="{offset:.0f}"
               stroke-linecap="round" transform="rotate(-90 55 55)"/>
           </svg>
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:26px;font-weight:500;color:var(--color-text-primary);">{score}</div>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:26px;font-weight:500;color:#1a1a1a;">{score}</div>
         </div>
-        <div style="font-size:11px;color:var(--color-text-secondary);margin-top:0.75rem;text-align:center;letter-spacing:0.05em;text-transform:uppercase;">Overall match</div>
+        <div style="font-size:11px;color:#888;margin-top:0.75rem;text-align:center;letter-spacing:0.05em;text-transform:uppercase;">Overall match</div>
       </div>
-
-      <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-secondary);margin-bottom:0.75rem;">Sub-scores</div>
+      <div style="background:#fff;border:0.5px solid #e8e8e8;border-radius:12px;padding:1.25rem;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#888;margin-bottom:0.75rem;">Sub-scores</div>
         {bars_html}
       </div>
-
     </div>
-
-    <div style="border-radius:var(--border-radius-lg);padding:1rem 1.25rem;display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;background:var(--color-background-success);border:0.5px solid var(--color-border-success);">
+    <div style="border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;background:#f0f7e6;border:0.5px solid #c5e19a;">
       <i class="ti {icon}" style="font-size:22px;color:{verdict_color};flex-shrink:0;"></i>
       <div style="font-size:15px;font-weight:500;color:{verdict_color};">{verdict} — {score}/100</div>
     </div>
-    """, unsafe_allow_html=True)
+    """
+    st.markdown(full_html, unsafe_allow_html=True)
 
 def render_results(markdown_text: str):
     sections = re.split(r'\n## ', markdown_text)
-    
+
     colors = {
         "Overall Match Score": "#1a1a2e",
         "Sub-scores": "#16213e",
@@ -281,16 +277,8 @@ def render_results(markdown_text: str):
         bg = colors.get(title, "#1a1a1a")
 
         st.markdown(f"""
-        <div style="
-            background: {bg};
-            border-radius: 12px;
-            padding: 1.4rem 1.8rem;
-            margin-bottom: 1rem;
-            border: 1px solid rgba(255,255,255,0.06);
-        ">
-            <p style="font-size:11px; font-weight:600; letter-spacing:0.08em;
-                      text-transform:uppercase; color:rgba(255,255,255,0.4);
-                      margin:0 0 8px 0;">{title}</p>
+        <div style="background:{bg};border-radius:12px;padding:1.4rem 1.8rem;margin-bottom:1rem;border:1px solid rgba(255,255,255,0.06);">
+          <p style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin:0 0 8px 0;">{title}</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -306,54 +294,23 @@ st.markdown("""
     html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     #MainMenu, footer, header { visibility: hidden; }
     .block-container { padding: 3rem 4rem 3rem 4rem !important; max-width: 1200px !important; }
-
     h1 { font-size: 26px !important; font-weight: 600 !important; letter-spacing: -0.02em !important; }
     h1 a, h2 a, h3 a { display: none !important; }
-
-    [data-testid="stTextArea"] textarea {
-        border: 1.5px solid #e8e8e8 !important;
-        border-radius: 12px !important;
-        font-size: 13.5px !important;
-        line-height: 1.6 !important;
-        background: #fff !important;
-        color: #1a1a1a !important;
-        padding: 14px 16px !important;
-        resize: none !important;
-    }
+    [data-testid="stTextArea"] textarea { border: 1.5px solid #e8e8e8 !important; border-radius: 12px !important; font-size: 13.5px !important; line-height: 1.6 !important; background: #fff !important; color: #1a1a1a !important; padding: 14px 16px !important; resize: none !important; }
     [data-testid="stTextArea"] textarea:focus { border-color: #1a1a1a !important; box-shadow: none !important; }
-    [data-testid="stTextArea"] textarea::placeholder { color: #ccc !important; }
+    [data-testid="stTextArea"] textarea::placeholder { color: #000 !important; }
     [data-testid="stTextArea"] label { display: none !important; }
-
-    [data-testid="stFileUploader"] section {
-        border: 1.5px dashed #ddd !important;
-        border-radius: 12px !important;
-        padding: 1.4rem 1rem !important;
-        background: #fafafa !important;
-    }
+    [data-testid="stFileUploader"] section { border: 1.5px dashed #ddd !important; border-radius: 12px !important; padding: 1.4rem 1rem !important; background: #fafafa !important; }
     [data-testid="stFileUploader"] section:hover { border-color: #aaa !important; }
-
-    [data-testid="stButton"] > button[kind="primary"] {
-        background: #1a3a6b !important;
-        color: #fff !important;
-        border: none !important;
-        border-radius: 10px !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        height: 50px !important;
-    }
+    [data-testid="stButton"] > button[kind="primary"] { background: #1a3a6b !important; color: #fff !important; border: none !important; border-radius: 10px !important; font-size: 14px !important; font-weight: 500 !important; height: 50px !important; }
     [data-testid="stButton"] > button[kind="primary"]:hover { background: #15305a !important; }
-
     hr { display: none !important; }
-
     [data-testid="stRadio"] label { font-size: 13px !important; }
 </style>
 """, unsafe_allow_html=True)
 
 st.title("AI-Powered Resume Screener")
-st.markdown(
-    "Provide a **job description** and your **resume** below. "
-    "The AI will score your match and suggest improvements."
-)
+st.markdown("Provide a **job description** and your **resume** below. The AI will score your match and suggest improvements.")
 
 col1, col2 = st.columns(2)
 
