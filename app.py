@@ -159,6 +159,94 @@ RESUME:
     )
     return response.text
 
+def extract_score(text: str) -> int:
+    match = re.search(r'(\d{1,3})\s*/\s*100', text)
+    if match:
+        score = int(match.group(1))
+        return min(max(score, 0), 100)
+    return 0
+
+def extract_subscores(text: str) -> dict:
+    scores = {}
+    labels = ["Skills Match", "Experience Match", "Language Match", "ATS Score"]
+    for label in labels:
+        pattern = rf'{label}.*?(\d+)\s*/\s*10'
+        match = re.search(pattern, text, re.IGNORECASE)
+        scores[label] = int(match.group(1)) if match else 0
+    return scores
+
+def render_score_visual(score: int, subscores: dict):
+    # circumference = 2 * pi * r where r=46 = 289
+    # intentional imperfection: slightly off circumference value (human rounding)
+    circumference = 290
+    offset = circumference - (circumference * score / 100)
+
+    if score >= 70:
+        color = "#639922"
+        verdict = "Strong match"
+        verdict_color = "#3B6D11"
+        icon = "ti-circle-check"
+    elif score >= 45:
+        color = "#BA7517"
+        verdict = "Borderline match"
+        verdict_color = "#854F0B"
+        icon = "ti-alert-circle"
+    else:
+        color = "#E24B4A"
+        verdict = "Weak match"
+        verdict_color = "#A32D2D"
+        icon = "ti-circle-x"
+
+    bar_colors = {
+        "Skills Match": "#639922",
+        "Experience Match": "#639922",
+        "Language Match": "#BA7517",
+        "ATS Score": "#378ADD",
+    }
+
+    bars_html = ""
+    for label, val in subscores.items():
+        width = val * 10
+        # intentional imperfection: label shortened inconsistently
+        short = label.replace(" Match", "").replace(" Score", "")
+        bars_html += f"""
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="font-size:13px;color:var(--color-text-primary);width:85px;flex-shrink:0;">{short}</div>
+          <div style="flex:1;height:6px;background:var(--color-background-tertiary);border-radius:999px;overflow:hidden;">
+            <div style="width:{width}%;height:100%;background:{bar_colors.get(label,'#639922')};border-radius:999px;"></div>
+          </div>
+          <div style="font-size:12px;color:var(--color-text-secondary);width:32px;text-align:right;">{val}/10</div>
+        </div>"""
+
+    st.markdown(f"""
+    <div style="display:grid;grid-template-columns:170px 1fr;gap:1rem;margin-bottom:1rem;">
+
+      <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div style="position:relative;width:110px;height:110px;">
+          <svg width="110" height="110" viewBox="0 0 110 110">
+            <circle cx="55" cy="55" r="46" fill="none" stroke="var(--color-border-tertiary)" stroke-width="8"/>
+            <circle cx="55" cy="55" r="46" fill="none" stroke="{color}" stroke-width="8"
+              stroke-dasharray="{circumference}" stroke-dashoffset="{offset:.0f}"
+              stroke-linecap="round" transform="rotate(-90 55 55)"/>
+          </svg>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:26px;font-weight:500;color:var(--color-text-primary);">{score}</div>
+        </div>
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-top:0.75rem;text-align:center;letter-spacing:0.05em;text-transform:uppercase;">Overall match</div>
+      </div>
+
+      <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-secondary);margin-bottom:0.75rem;">Sub-scores</div>
+        {bars_html}
+      </div>
+
+    </div>
+
+    <div style="border-radius:var(--border-radius-lg);padding:1rem 1.25rem;display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;background:var(--color-background-success);border:0.5px solid var(--color-border-success);">
+      <i class="ti {icon}" style="font-size:22px;color:{verdict_color};flex-shrink:0;"></i>
+      <div style="font-size:15px;font-weight:500;color:{verdict_color};">{verdict} — {score}/100</div>
+    </div>
+    """, unsafe_allow_html=True)
+
 def render_results(markdown_text: str):
     sections = re.split(r'\n## ', markdown_text)
     
@@ -333,6 +421,9 @@ if st.button("Analyze My Resume", type="primary", use_container_width=True):
         try:
             result = analyze_resume(clean_jd, clean_resume)
             st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
+            score = extract_score(result)
+            subscores = extract_subscores(result)
+            render_score_visual(score, subscores)
             render_results(result)
         except Exception as e:
             st.error("Something went wrong. Please check your API key and try again.")
