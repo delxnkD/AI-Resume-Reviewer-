@@ -81,7 +81,7 @@ Analyze the resume against the job description and return ONLY the following str
 
 ## Overall Match Score
 Give a single score out of 100 with a two-sentence explanation.
-Display it visually: ████████░░ 72/100
+Display it visually: 72/100
 
 ---
 
@@ -184,16 +184,22 @@ def render_score_visual(score: int, subscores: dict):
         verdict = "Strong match"
         verdict_color = "#3B6D11"
         icon = "ti-circle-check"
+        banner_bg = "#f0f7e6"
+        banner_border = "#c5e19a"
     elif score >= 45:
         color = "#BA7517"
         verdict = "Borderline match"
         verdict_color = "#854F0B"
         icon = "ti-alert-circle"
+        banner_bg = "#fef3e2"
+        banner_border = "#f0c060"
     else:
         color = "#E24B4A"
         verdict = "Weak match"
         verdict_color = "#A32D2D"
         icon = "ti-circle-x"
+        banner_bg = "#fdecea"
+        banner_border = "#f5c0bc"
 
     bar_colors = {
         "Skills Match": "#639922",
@@ -202,46 +208,49 @@ def render_score_visual(score: int, subscores: dict):
         "ATS Score": "#378ADD",
     }
 
-    bars_html = ""
-    for label, val in subscores.items():
-        width = val * 10
-        short = label.replace(" Match", "").replace(" Score", "")
-        bar_color = bar_colors.get(label, "#639922")
-        bars_html += f"""
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-          <div style="font-size:13px;color:#lalala;width:85px;flex-shrink:0;">{short}</div>
-          <div style="flex:1;height:6px;background:#e8e8e8;border-radius:999px;overflow:hidden;">
-            <div style="width:{width}%;height:100%;background:{bar_color};border-radius:999px;"></div>
-          </div>
-          <div style="font-size:12px;color:#888;width:32px;text-align:right;">{val}/10</div>
-        </div>"""
+    col_circle, col_bars = st.columns([1.2, 3])
 
-    full_html = f"""
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-    <div style="display:grid;grid-template-columns:170px 1fr;gap:1rem;margin-bottom:1rem;">
-      <div style="background:#fff;border:0.5px solid #e8e8e8;border-radius:12px;padding:1.25rem;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-        <div style="position:relative;width:110px;height:110px;">
-          <svg width="110" height="110" viewBox="0 0 110 110">
-            <circle cx="55" cy="55" r="46" fill="none" stroke="#e8e8e8" stroke-width="8"/>
-            <circle cx="55" cy="55" r="46" fill="none" stroke="{color}" stroke-width="8"
-              stroke-dasharray="{circumference}" stroke-dashoffset="{offset:.0f}"
-              stroke-linecap="round" transform="rotate(-90 55 55)"/>
-          </svg>
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:26px;font-weight:500;color:#1a1a1a;">{score}</div>
+    with col_circle:
+        st.markdown(f"""
+        <div style="background:#fff;border:0.5px solid #e8e8e8;border-radius:12px;padding:1.25rem;display:flex;flex-direction:column;align-items:center;justify-content:center;height:180px;">
+          <div style="position:relative;width:110px;height:110px;">
+            <svg width="110" height="110" viewBox="0 0 110 110">
+              <circle cx="55" cy="55" r="46" fill="none" stroke="#e8e8e8" stroke-width="8"/>
+              <circle cx="55" cy="55" r="46" fill="none" stroke="{color}" stroke-width="8"
+                stroke-dasharray="{circumference}" stroke-dashoffset="{offset:.0f}"
+                stroke-linecap="round" transform="rotate(-90 55 55)"/>
+            </svg>
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:26px;font-weight:500;color:#1a1a1a;">{score}</div>
+          </div>
+          <div style="font-size:11px;color:#888;margin-top:0.75rem;text-align:center;letter-spacing:0.05em;text-transform:uppercase;">Overall match</div>
         </div>
-        <div style="font-size:11px;color:#888;margin-top:0.75rem;text-align:center;letter-spacing:0.05em;text-transform:uppercase;">Overall match</div>
-      </div>
-      <div style="background:#fff;border:0.5px solid #e8e8e8;border-radius:12px;padding:1.25rem;">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#888;margin-bottom:0.75rem;">Sub-scores</div>
-        {bars_html}
-      </div>
-    </div>
-    <div style="border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;background:#f0f7e6;border:0.5px solid #c5e19a;">
+        """, unsafe_allow_html=True)
+
+    with col_bars:
+        st.markdown("<div style='background:#fff;border:0.5px solid #e8e8e8;border-radius:12px;padding:1.25rem;'>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#ffffff;margin-bottom:0.75rem;'>Sub-scores</div>", unsafe_allow_html=True)
+        for label, val in subscores.items():
+            width = val * 10
+            short = label.replace(" Match", "").replace(" Score", "")
+            bar_color = bar_colors.get(label, "#639922")
+            st.markdown(f"""
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <div style="font-size:13px;color:#ffffff;width:85px;flex-shrink:0;">{short}</div>
+              <div style="flex:1;height:6px;background:#e8e8e8;border-radius:999px;overflow:hidden;">
+                <div style="width:{width}%;height:100%;background:{bar_color};border-radius:999px;"></div>
+              </div>
+              <div style="font-size:12px;color:#888;width:32px;text-align:right;">{val}/10</div>
+            </div>
+            """, unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <div style="border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;gap:0.75rem;margin-top:1rem;margin-bottom:1.5rem;background:{banner_bg};border:0.5px solid {banner_border};">
       <i class="ti {icon}" style="font-size:22px;color:{verdict_color};flex-shrink:0;"></i>
       <div style="font-size:15px;font-weight:500;color:{verdict_color};">{verdict} — {score}/100</div>
     </div>
-    """
-    st.markdown(full_html, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 def render_results(markdown_text: str):
     sections = re.split(r'\n## ', markdown_text)
